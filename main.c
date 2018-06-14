@@ -1,4 +1,5 @@
 #pragma GCC diagnostic ignored "-Walloc-size-larger-than="
+#pragma GCC diagnostic ignored "-Wint-conversion"
 
 #include <stdio.h>
 #include <malloc.h>
@@ -24,18 +25,19 @@ typedef struct EDGE {
 
 typedef struct COMMAND {
     char *cmd;
-    int first;
-    int second;
+    long first;
+    long second;
 } command;
 
 int success = 0;
 
-void search_node(edge *edges, node *nodes, command *cmd, int count2, edge current, char *array, int depth);
+void search_node(edge *edges, node *nodes, command *cmd, int count2, edge current, int *array, int depth);
 
 int main() {
     char *line = NULL;
     size_t len = 0;
     ssize_t read;
+    char *ptr;
 
     int count = 0, count2 = 0, count3 = 0;
     int i, j;
@@ -88,14 +90,14 @@ int main() {
 
     edge *edges = (edge *) malloc(sizeof(edge) * count2);
 
-    int max = INT_MIN;
+    long max = LONG_MIN;
 
     for (i = 0; i < count2; i++) {
-        if ((max <= atoi(text[i * 3])) && (max <= atoi(text[i * 3 + 1]))) {
-            if (atoi(text[i * 3]) >= atoi(text[i * 3 + 1])) {
-                max = atoi(text[i * 3]);
+        if ((max <= strtol(text[i * 3], &ptr, 10)) && (max <= strtol(text[i * 3 + 1], &ptr, 10))) {
+            if (strtol(text[i * 3], &ptr, 10) >= strtol(text[i * 3 + 1], &ptr, 10)) {
+                max = strtol(text[i * 3], &ptr, 10);
             } else {
-                max = atoi(text[i * 3 + 1]);
+                max = strtol(text[i * 3 + 1], &ptr, 10);
             }
         }
     }
@@ -116,8 +118,8 @@ int main() {
     }
 
     for (i = 0; i < count2; i++) {
-        int a = atoi(text[i * 3]) - 1;
-        int b = atoi(text[i * 3 + 1]) - 1;
+        long a = strtol(text[i * 3], &ptr, 10) - 1;
+        long b = strtol(text[i * 3 + 1], &ptr, 10) - 1;
 
         nodes[a].to_num++;
         nodes[a].to = (int *) realloc(nodes[a].to, sizeof(int *) * nodes[a].to_num);
@@ -155,8 +157,8 @@ int main() {
 
     for (j = 0; j < count3; j++) {
         cmd[j].cmd = strdup(text[count2 * 3 + j * 3]);
-        cmd[j].first = atoi(text[count2 * 3 + j * 3 + 1]);
-        cmd[j].second = atoi(text[count2 * 3 + j * 3 + 2]);
+        cmd[j].first = strtol(text[count2 * 3 + j * 3 + 1], &ptr, 10);
+        cmd[j].second = strtol(text[count2 * 3 + j * 3 + 2], &ptr, 10);
 
 //        printf("cmd[%d].cmd = %s cmd[%d].first = %d cmd[%d].second = %d\n", j, cmd[j].cmd, j, cmd[j].first, j,
 //               cmd[j].second);
@@ -218,13 +220,18 @@ int main() {
                 if ((edges[j].start->index == cmd[i].first) && (edges[j].del == 0) && (edges[j].start->pass == 0)) {
 
                     int depth = 0;
-                    char array[count2 * 2];
-                    for (int k = 0; k < count2 + 1; k++) {
-                        array[k] = 0;
-                    }
+//                    char array[count2 * 2];
+//                    for (int k = 0; k < count2 + 1; k++) {
+//                        array[k] = 0;
+//                    }
+                    int array[count2];
+//                    for (int k = 0; k < count2; k++) {
+//                        array[k] = NULL;
+//                    }
 
-                    array[depth] = (char) (edges[j].start->index + '0');
-                    array[depth + 1] = ' ';
+//                    array[depth] = (char) (edges[j].start->index + '0');
+//                    array[depth + 1] = ' ';
+                    array[depth] = edges[j].start->index;
 
 //                    printf("init: %d -> %d - going to next node...\n", edges[j].start->index, edges[j].end->index);
                     edges[j].start->pass = 1;
@@ -315,7 +322,7 @@ int main() {
                         }
                     }
 
-                    for (int k = 0; k < nodes[i].to_num; k++) {
+                    for (int k = 0; k < nodes[j].to_num; k++) {
                         if (nodes[j].to[k] == tmp) {
 
                             for (int p = 0; p < count2; p++) {
@@ -377,28 +384,37 @@ int main() {
     return 0;
 }
 
-void search_node(edge *edges, node *nodes, command *cmd, int count2, edge current, char *array, int depth) {
+void search_node(edge *edges, node *nodes, command *cmd, int count2, edge current, int *array, int depth) {
 //    printf("cmd[i].cmd = %s cmd[i].first = %d cmd[i].second = %d\n", cmd[0].cmd, cmd[0].first, cmd[0].second);
 
-    depth += 2;
+//    depth += 2;
+    depth++;
 
     if (current.end->index == cmd[0].second) {
-        array[depth] = (char) (current.end->index + '0');
-        array[depth + 1] = '\0';
-        printf("%s\n", array);
+//        array[depth] = (char) (current.end->index + '0');
+//        array[depth + 1] = '\0';
+        array[depth] = current.end->index;
+//        printf("%s\n", array);
 //        printf("finished!!\n");
-        array[depth + 1] = 0;
+//        array[depth + 1] = 0;
+        for (int i = 0; i < depth; i++) {
+            printf("%d ", array[i]);
+        }
+        printf("%d\n", array[depth]);
+        array[depth] = 0;
         success++;
     } else {
         for (int i = 0; i < count2; i++) {
             if ((edges[i].start->index == current.end->index) && (edges[i].del == 0) && (edges[i].end->pass == 0)) {
                 edges[i].end->pass = 1;
-                array[depth] = (char) (edges[i].start->index + '0');
-                array[depth + 1] = ' ';
+//                array[depth] = (char) (edges[i].start->index + '0');
+//                array[depth + 1] = ' ';
+                array[depth] = edges[i].start->index;
 //                printf("%d -> %d used - going to next node...\n", edges[i].start->index, edges[i].end->index);
                 search_node(edges, nodes, cmd, count2, edges[i], array, depth);
                 edges[i].end->pass = 0;
-                array[depth + 2] = 0;
+//                array[depth + 2] = 0;
+                array[depth] = 0;
             }
         }
     }
